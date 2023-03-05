@@ -3,6 +3,11 @@ from bs4 import BeautifulSoup
 import re
 import os
 import tempfile
+from pydub import AudioSegment
+
+
+INSTALL_PATH = os.path.join(os.path.expanduser("~"), "Downloads")
+TEMP_INSTALL_PATH = os.path.join(INSTALL_PATH, "temp_mp3")
 
 
 # manage many inner urls from the same main url
@@ -21,7 +26,8 @@ def downlad_url_manager(homepage_url):
         
 
 def downlad_url(url):
-    path = os.path.join(os.path.expanduser("~"), "downlad_urls", "temp_mp3")
+    print(url)
+    path = TEMP_INSTALL_PATH
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -35,6 +41,7 @@ def downlad_url(url):
         with open(filename,'wb') as f:
             f.write(doc.content)
         files_list.append(filename)
+        print(filename)
 
 
 def get_url_title(url):
@@ -47,10 +54,33 @@ def is_inner_url_exist(homepage_title, inner_url):
     return homepage_title != get_url_title(inner_url)
 
 
+def combine_mp3_files(url):
+    filename = '{}.m4a'.format(url.split('/')[-2])
+    # create output file path in Downloads folder
+    output_path = os.path.join(INSTALL_PATH, filename)
+
+    # get list of all mp3 files in directory
+    mp3_files = sorted([f for f in os.listdir(TEMP_INSTALL_PATH) if f.endswith(".mp3")])
+
+    # combine mp3 files into a single audio segment
+    audio_segment = AudioSegment.empty()
+    for mp3_file in mp3_files:
+        audio_segment += AudioSegment.from_file(os.path.join(TEMP_INSTALL_PATH, mp3_file))
+
+    # export audio segment as m4a file
+    audio_segment.export(output_path, format="mp3")#, tags={'album': 'Combined Audiobooks'})
+
+    print("Combined MP3 files to M4B: ", output_path)
+
+
 def main():
     homepage_url = "https://staraudiobooks.net/stephen-king-drawing-of-three-dt2-audio-book/"
+    
     downlad_url_manager(homepage_url)
-    # combine
+    print('download finished')
+    combine_mp3_files(homepage_url)
+    print('combine finished')
+
     #delete temp_mp3 folder
     
 
