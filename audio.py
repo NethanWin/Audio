@@ -1,49 +1,30 @@
-# downloader imports
-from pydub import AudioSegment
+import requests
+from bs4 import BeautifulSoup
+import re
 import os
 import multiprocessing
 import time
+from moviepy.editor import concatenate_audioclips, AudioFileClip
+#from pydub import AudioSegment
 
 
-# extractor imports
-import requests
-from bs4 import BeautifulSoup
-import os
+def download(url):
+    files_list = []
+    r = requests.get(url)
+    soup = BeautifulSoup(r.content, 'html.parser')    
+    print('download starts')
+    for a in soup.find_all('a', href=re.compile(r'http.*\.mp3')):
+        filename = a['href'][a['href'].rfind("/") + 1:]
+        doc = requests.get(a['href'])
+        with open(filename, 'wb') as f:
+            f.write(doc.content)
+        files_list.append(filename)
 
 
-def download():
-    # the url you want to download from
-    url = "https://stephenkingaudiobooks.com/the-drawing-of-the-three/"
-    
-    # send a request to the url and get the response object
-    response = requests.get(url)
-    
-    # extract the page HTML content
-    html_content = response.content
-    
-    # create a BeautifulSoup object for parsing the HTML content
-    soup = BeautifulSoup(html_content, "html.parser")
-    
-    # find all the <a> tags with an href attribute that ends in ".mp3"
-    mp3_links = soup.find_all("a", href=lambda href: href.endswith(".mp3"))
-    
-    # create a directory to store the downloaded mp3 files
-    if not os.path.exists("mp3_files"):
-        os.makedirs("mp3_files")
-    
-    # loop through each mp3 link and download the file
-    for link in mp3_links:
-        mp3_url = link["href"]
-        # use the last part of the URL as the file name
-        file_name = mp3_url.split("/")[-1]
-        # create the file path
-        file_path = os.path.join("mp3_files", file_name)
-        # download the file
-        with open(file_path, "wb") as f:
-            f.write(requests.get(mp3_url).content)
+"""everyting below this statment is not tested!!!"""
 
 
-def temp():
+def pydub():
     # Define the path to the directory containing the mp3 files
     path = "path/to/mp3/files"
 
@@ -54,7 +35,6 @@ def temp():
     mp3_files = [f for f in os.listdir(path) if f.endswith(".mp3")]
 
 
-def pydub():
     # Pydub approach
     start_time = time.time()
     combined_audio = AudioSegment.empty()
@@ -102,12 +82,15 @@ def multiprocessing():
     end_time = time.time()
     multiprocessing_time = end_time - start_time
 
+
 def main():
-    download()
-    
+    url = "https://stephenkingaudiobooks.com/dark-tower-1/"
+    download(url)
     # Compare performance
     # print(f"Pydub time: {pydub_time:.2f} seconds")
     # print(f"Multiprocessing time: {multiprocessing_time:.2f} seconds")
     
     
 
+if __name__ == '__main__':
+    main()
